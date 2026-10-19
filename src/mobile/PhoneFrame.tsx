@@ -142,3 +142,27 @@ export function PhoneFrame({ children }: PropsWithChildren) {
     </ScreenPortalContext.Provider>
   );
 }
+
+/** A responsive application surface for the shipped web app.
+ *
+ * It retains the screen portal required by BottomSheet while intentionally
+ * omitting every piece of prototype-only device chrome. */
+export function StandaloneFrame({ children }: PropsWithChildren) {
+  const screenRef = useRef<HTMLDivElement | null>(null);
+  const contextValue = useMemo(() => ({ screenRef }), []);
+
+  return (
+    <ScreenPortalContext.Provider value={contextValue}>
+      <div className="standalone-stage" onDragStartCapture={suppressNativeDrag}>
+        <div
+          ref={screenRef}
+          className="standalone-screen"
+          data-phone-screen
+          style={{ "--device-safe-area-bottom": "env(safe-area-inset-bottom, 0px)" } as CSSProperties}
+        >
+          {children}
+        </div>
+      </div>
+    </ScreenPortalContext.Provider>
+  );
+}

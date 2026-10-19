@@ -11,8 +11,8 @@ export {
   useKeyboardInsets,
 } from "./Keyboard";
 export { MobileScroll } from "./MobileScroll";
-export { MobileRuntime } from "./MobileRuntime";
-export { PhoneFrame, useScreenPortal } from "./PhoneFrame";
+export { MobileRuntime, StandaloneRuntime } from "./MobileRuntime";
+export { PhoneFrame, StandaloneFrame, useScreenPortal } from "./PhoneFrame";
 export { HomeIndicator, MobileTextField, StatusBar } from "./components";
 export { mobileAssets } from "./assets";
 export { iphoneGeometry, pixelGeometry, type IPhoneGeometry, type MobileDeviceGeometry } from "./geometry";

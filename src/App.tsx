@@ -1,10 +1,10 @@
-import { MobileRuntime } from "./mobile";
+import { StandaloneRuntime } from "./mobile";
 import Prototype from "./Prototype";
 
 export default function App() {
   return (
-    <MobileRuntime>
+    <StandaloneRuntime>
       <Prototype />
-    </MobileRuntime>
+    </StandaloneRuntime>
   );
 }

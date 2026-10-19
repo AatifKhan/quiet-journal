@@ -42,7 +42,8 @@ body,
 
 body {
   min-width: 320px;
-  overflow: hidden;
+  overflow: auto;
+  background: #050505;
 }
 
 button,
@@ -62,6 +63,36 @@ button {
   height: 100%;
   place-items: center;
   padding: 24px;
+}
+
+.standalone-stage {
+  width: 100%;
+  min-height: 100%;
+  background: #050505;
+}
+
+.standalone-screen {
+  position: relative;
+  width: 100%;
+  min-height: 100dvh;
+  max-width: 480px;
+  margin: 0 auto;
+  overflow: hidden;
+  background: #050505;
+}
+
+.standalone-screen .mobile-app-viewport {
+  position: absolute;
+  inset: 0;
+}
+
+.standalone-screen .mobile-page {
+  --keyboard-height: 0px !important;
+  --mobile-safe-area-height: env(safe-area-inset-bottom, 0px) !important;
+}
+
+.standalone-screen .mobile-scroll {
+  touch-action: pan-y;
 }
 
 .device-menu-bar {

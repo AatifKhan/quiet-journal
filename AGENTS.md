@@ -8,6 +8,7 @@
 - Motion should be brief, state-led, and optional: use it to clarify a saved update, checkpoint completion, or focused input—not as gamification or ambient distraction. Respect reduced-motion preferences.
 - Primary navigation is a compact floating dock inspired by Bencho’s Magnifying dock: on pointer devices, nearby icons may gently magnify and lift; on touch, selection remains stable and clearly marked without cursor-dependent behavior.
 - Journal data stays in browser-local storage by default; user-controlled JSON export and import are the recovery path. There is no account, sync service, or backend.
+- The shipped web app is a responsive, edge-to-edge surface—not a device mockup. Do not render a device picker, bezel, simulated status bar, home indicator, or simulated keyboard outside prototype-only regression fixtures.
 
 ## Prototype Instructions
 

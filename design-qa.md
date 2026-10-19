@@ -1,15 +1,15 @@
 # Design QA — Quiet Journal
 
-## Revision: local-first release preparation
+## Revision: device-free web release
 
 - **Source visual truth:** selected `Quiet journal` wireframe at `/Users/aatif/.codex/visualizations/2026/10/19/01a15493-ae04-7f02-a467-efb719e0d23c/goal-tracker-wireframes.html`, with the black, compact interaction language informed by live captures of [Bencho](https://bencho.dev/) and its [Magnifying dock](https://bencho.dev/blocks/dock) on 2026-10-19.
-- **Implementation capture:** browser-rendered `http://localhost:4173/`, iPhone content screen (393 × 852 CSS px, device scale factor 1), inspected on 2026-10-19. App-owned screen content was compared; device bezel, status bar, keyboard, and home indicator are template-owned.
+- **Implementation capture:** browser-rendered `http://localhost:4173/`, inspected as a responsive browser app on 2026-10-19. The released app deliberately has no device frame, device picker, simulated status bar, home indicator, or simulated keyboard.
 - **States compared:** Home, just-saved progress, completed checkpoint, focused floating-label checkpoint field, newly saved named checkpoint, active Past dock state, and the Settings backup/restore destination.
 - **Density normalization:** the wireframe is interactive HTML rather than a fixed-density raster. The prototype was inspected in the same mobile-app context at the template’s native 393 × 852 CSS size.
 
 ## Full-view and focused evidence
 
-The Home continues to foreground two quiet goal cards, a named checkpoint, and a compact right-aligned `+` control. Its full-width navigation bar is now replaced with a floating three-icon dock. On pointer devices, icon proximity produces a restrained lift and magnification; on touch, the dock remains stable and the active destination is identified by a lime dot. The saved state makes only the quick action and progress line animate; the rest of the page stays still. On detail, a checkpoint’s ring fills, the check appears, and the label gains a quiet strike-through while remaining in place. The checkpoint field uses a label that lifts into the field edge on focus or when populated. Settings makes the device-local data boundary explicit and offers one-step JSON export and import without putting a warning, account wall, or cloud prompt in the main flow.
+The Home continues to foreground two quiet goal cards, a named checkpoint, and a compact right-aligned `+` control. Its full-width navigation bar is now replaced with a floating three-icon dock. On pointer devices, icon proximity produces a restrained lift and magnification; on touch, the dock remains stable and the active destination is identified by a lime dot. The saved state makes only the quick action and progress line animate; the rest of the page stays still. On detail, a checkpoint’s ring fills, the check appears, and the label gains a quiet strike-through while remaining in place. The checkpoint field uses a label that lifts into the field edge on focus or when populated. Settings makes the device-local data boundary explicit and offers one-step JSON export and import without putting a warning, account wall, or cloud prompt in the main flow. The app is now a direct, responsive browser surface rather than a device simulation.
 
 Focused inspection was required for the quick-update action, checkpoint completion row, toast, checkpoint sheet, and dock because those are the fidelity-critical interaction surfaces. The live browser pass also confirmed a newly named checkpoint becomes visible after saving, the simulated keyboard clears with the sheet, and the dock navigates to Past with the correct active state.
 
@@ -51,5 +51,6 @@ No actionable P0, P1, or P2 issues remain in the tested states.
 2. Motion pass: added direct quick-save feedback, an undo affordance, Bencho-style checkpoint completion, and a floating-label field. The live mobile validation found and corrected keyboard-dismissal behavior before final review.
 3. Magnifying-dock pass: replaced the full-width navigation with a compact Bencho-inspired floating dock. Browser review found a missing safe-area inheritance path, which was corrected with an explicit safe-area fallback before final review.
 4. Local-first release pass: added browser-local persistence plus user-controlled JSON backup and restore; verified the runtime, browser test suite, static build, Sites packaging, and the GitHub Pages base path.
+5. Device-free web pass: replaced the release shell with a responsive browser surface while retaining portal/sheet support. Regression fixtures continue to use the device runtime; the shipped app does not.
 
 final result: passed

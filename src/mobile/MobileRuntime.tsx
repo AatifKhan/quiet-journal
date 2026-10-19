@@ -1,7 +1,7 @@
 import { useEffect, type PropsWithChildren } from "react";
 import { MobileDeviceProvider, useMobileDevice } from "./Device";
 import { KeyboardDock, KeyboardProvider, useKeyboard } from "./Keyboard";
-import { PhoneFrame } from "./PhoneFrame";
+import { PhoneFrame, StandaloneFrame } from "./PhoneFrame";
 import { HomeIndicator, StatusBar } from "./components";
 
 export function MobileRuntime({ children }: PropsWithChildren) {
@@ -16,6 +16,19 @@ export function MobileRuntime({ children }: PropsWithChildren) {
           <KeyboardDock />
         </KeyboardProvider>
       </PhoneFrame>
+    </MobileDeviceProvider>
+  );
+}
+
+export function StandaloneRuntime({ children }: PropsWithChildren) {
+  return (
+    <MobileDeviceProvider>
+      <StandaloneFrame>
+        <KeyboardProvider>
+          <KeyboardPreview />
+          <MobileAppViewport>{children}</MobileAppViewport>
+        </KeyboardProvider>
+      </StandaloneFrame>
     </MobileDeviceProvider>
   );
 }
