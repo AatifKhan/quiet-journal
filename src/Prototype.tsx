@@ -1,0 +1,193 @@
+import { type CSSProperties, type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
+import { ArchiveIcon, ArrowLeftIcon, CheckIcon, ChevronRightIcon, DotFilledIcon, GearIcon, HomeIcon, PlusIcon } from "@radix-ui/react-icons";
+import { BottomSheet, KeyboardInput, MobileScroll, useKeyboard } from "./mobile";
+
+type GoalStatus = "active" | "paused";
+type UpdateChoice = "Made progress" | "Held steady" | "Paused for now";
+type Checkpoint = { id: string; title: string; complete: boolean };
+type Goal = { id: string; title: string; note: string; progress: number; status: GoalStatus; checkpoints: Checkpoint[]; updates: { label: string; date: string }[] };
+type Toast = { message: string; undoGoal?: Goal };
+
+const startingGoals: Goal[] = [
+  { id: "portfolio", title: "Creative portfolio", note: "Updated 4 days ago", progress: 64, status: "active", checkpoints: [{ id: "case-study", title: "Write the first case study", complete: false }, { id: "layout", title: "Choose a simpler layout", complete: true }], updates: [{ label: "Added two case studies", date: "Oct 15" }, { label: "Decided on a simpler layout", date: "Oct 9" }, { label: "Portfolio goal created", date: "Sep 28" }] },
+  { id: "strength", title: "Strength & energy", note: "Moving at your own pace", progress: 40, status: "active", checkpoints: [{ id: "walk", title: "Take two gentle walks", complete: false }], updates: [{ label: "Went for a gentle walk", date: "Oct 16" }] },
+  { id: "spanish", title: "Learn Spanish", note: "Paused on Aug 20 · 8 updates saved", progress: 32, status: "paused", checkpoints: [{ id: "conversation", title: "Have a five-minute conversation", complete: false }], updates: [{ label: "Practiced a conversation", date: "Aug 20" }] },
+];
+
+const journalStore = {
+  key: "quiet-journal:v1",
+  load(): Goal[] {
+    if (typeof window === "undefined") return startingGoals;
+    try {
+      const stored = window.localStorage.getItem(this.key);
+      if (!stored) return startingGoals;
+      const snapshot = JSON.parse(stored);
+      return isJournalSnapshot(snapshot) ? snapshot.goals : startingGoals;
+    } catch {
+      return startingGoals;
+    }
+  },
+  save(goals: Goal[]) {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(this.key, JSON.stringify({ version: 1, goals }));
+    } catch {
+      // The journal remains usable for this session if browser storage is unavailable.
+    }
+  },
+};
+
+function isJournalSnapshot(value: unknown): value is { version: 1; goals: Goal[] } {
+  if (!value || typeof value !== "object") return false;
+  const snapshot = value as { version?: unknown; goals?: unknown };
+  return snapshot.version === 1 && Array.isArray(snapshot.goals) && snapshot.goals.every((goal) => (
+    goal && typeof goal === "object" && typeof (goal as Goal).id === "string" && typeof (goal as Goal).title === "string" && Array.isArray((goal as Goal).checkpoints) && Array.isArray((goal as Goal).updates)
+  ));
+}
+
+export default function Prototype() {
+  const keyboard = useKeyboard();
+  const [goals, setGoals] = useState(() => journalStore.load());
+  const [screen, setScreen] = useState<"home" | "detail" | "past" | "settings">("home");
+  const [selectedId, setSelectedId] = useState("portfolio");
+  const [updateOpen, setUpdateOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [checkpointOpen, setCheckpointOpen] = useState(false);
+  const [updateChoice, setUpdateChoice] = useState<UpdateChoice>("Made progress");
+  const [newGoalName, setNewGoalName] = useState("");
+  const [newCheckpointName, setNewCheckpointName] = useState("");
+  const [toast, setToast] = useState<Toast | null>(null);
+  const [justSavedGoalId, setJustSavedGoalId] = useState<string | null>(null);
+  const toastTimer = useRef<number | null>(null);
+  const successTimer = useRef<number | null>(null);
+  const selectedGoal = goals.find((goal) => goal.id === selectedId) ?? goals[0];
+  const activeGoals = goals.filter((goal) => goal.status === "active");
+  const restingGoals = goals.filter((goal) => goal.status === "paused");
+  useEffect(() => { journalStore.save(goals); }, [goals]);
+  const showToast = (message: string, undoGoal?: Goal) => {
+    if (toastTimer.current) window.clearTimeout(toastTimer.current);
+    setToast({ message, undoGoal });
+    toastTimer.current = window.setTimeout(() => setToast(null), undoGoal ? 5000 : 2400);
+  };
+  const showProgressSuccess = (goalId: string) => {
+    if (successTimer.current) window.clearTimeout(successTimer.current);
+    setJustSavedGoalId(goalId);
+    successTimer.current = window.setTimeout(() => setJustSavedGoalId(null), 720);
+  };
+  const openGoal = (goalId: string) => { setSelectedId(goalId); setScreen("detail"); };
+
+  const updateGoal = (goalId: string, choice: UpdateChoice = "Made progress") => {
+    const previousGoal = goals.find((goal) => goal.id === goalId);
+    const date = choice === "Made progress" ? "Today" : "Checked in today";
+    setGoals((current) => current.map((goal) => {
+      if (goal.id !== goalId) return goal;
+      if (choice === "Paused for now") return { ...goal, note: "Resting for now · your story is saved", status: "paused", updates: [{ label: "Paused this goal for now", date }, ...goal.updates] };
+      return { ...goal, progress: choice === "Made progress" ? Math.min(100, goal.progress + 4) : goal.progress, note: choice === "Made progress" ? "Updated just now" : "Checked in just now", updates: [{ label: choice, date }, ...goal.updates] };
+    }));
+    setUpdateOpen(false);
+    if (choice === "Paused for now") { setScreen("past"); showToast("This can rest here. Nothing is lost."); }
+    else if (choice === "Made progress") { showProgressSuccess(goalId); showToast("Progress saved.", previousGoal); }
+    else showToast("Check-in saved.");
+  };
+
+  const toggleCheckpoint = (checkpointId: string) => {
+    setGoals((current) => current.map((goal) => goal.id === selectedGoal.id ? { ...goal, checkpoints: goal.checkpoints.map((checkpoint) => checkpoint.id === checkpointId ? { ...checkpoint, complete: !checkpoint.complete } : checkpoint) } : goal));
+  };
+  const addCheckpoint = () => {
+    const name = newCheckpointName.trim(); if (!name) return;
+    setGoals((current) => current.map((goal) => goal.id === selectedGoal.id ? { ...goal, checkpoints: [...goal.checkpoints, { id: `checkpoint-${Date.now()}`, title: name, complete: false }] } : goal));
+    keyboard.hide(); setNewCheckpointName(""); setCheckpointOpen(false); showToast("Checkpoint added to this goal.");
+  };
+  const undoProgress = () => {
+    if (!toast?.undoGoal) return;
+    const previousGoal = toast.undoGoal;
+    setGoals((current) => current.map((goal) => goal.id === previousGoal.id ? previousGoal : goal));
+    showToast("Progress returned to where it was.");
+  };
+  const exportJournal = () => {
+    const file = new Blob([JSON.stringify({ version: 1, goals }, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(file);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "quiet-journal-backup.json";
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast("Backup saved to your device.");
+  };
+  const importJournal = async (file: File | null) => {
+    if (!file) return;
+    try {
+      const snapshot = JSON.parse(await file.text());
+      if (!isJournalSnapshot(snapshot)) throw new Error("Invalid journal backup");
+      setGoals(snapshot.goals);
+      setScreen("home");
+      showToast("Journal restored on this device.");
+    } catch {
+      showToast("That backup could not be read.");
+    }
+  };
+  const restoreGoal = (goalId: string) => { setGoals((current) => current.map((goal) => goal.id === goalId ? { ...goal, status: "active", note: "Back when you’re ready", updates: [{ label: "Brought this goal back", date: "Today" }, ...goal.updates] } : goal)); setScreen("home"); showToast("Welcome back."); };
+  const createGoal = () => { const name = newGoalName.trim(); if (!name) return; setGoals((current) => [...current, { id: `goal-${Date.now()}`, title: name, note: "A new place to begin", progress: 0, status: "active", checkpoints: [], updates: [{ label: "Goal created", date: "Today" }] }]); keyboard.hide(); setNewGoalName(""); setCreateOpen(false); showToast("New goal added."); };
+
+  return <div className="journal-app" aria-label="Quiet Journal goal tracker">
+    <header className="journal-header">{screen === "home" ? <><div><p className="journal-eyebrow">Your goals</p><h1>Small moves, held in view.</h1></div><button className="header-action" type="button" onClick={() => setCreateOpen(true)} aria-label="Add a goal"><PlusIcon /></button></> : <><button className="back-action" type="button" onClick={() => setScreen("home")}><ArrowLeftIcon />Goals</button><span className="header-space" aria-hidden="true" /></>}</header>
+    <MobileScroll className="journal-scroll"><main className="journal-content">
+      {screen === "home" ? <HomeScreen activeGoals={activeGoals} openGoal={openGoal} updateGoal={updateGoal} justSavedGoalId={justSavedGoalId} goToPast={() => setScreen("past")} /> : null}
+      {screen === "detail" ? <DetailScreen goal={selectedGoal} justSaved={justSavedGoalId === selectedGoal.id} makeProgress={() => updateGoal(selectedGoal.id)} openDetailedUpdate={() => setUpdateOpen(true)} openCheckpoint={() => setCheckpointOpen(true)} toggleCheckpoint={toggleCheckpoint} pauseGoal={() => updateGoal(selectedGoal.id, "Paused for now")} /> : null}
+      {screen === "past" ? <PastScreen goals={restingGoals} restoreGoal={restoreGoal} /> : null}
+      {screen === "settings" ? <SettingsScreen exportJournal={exportJournal} importJournal={importJournal} /> : null}
+    </main></MobileScroll>
+    <JournalDock screen={screen} goHome={() => setScreen("home")} goPast={() => setScreen("past")} openSettings={() => setScreen("settings")} />
+    <BottomSheet open={updateOpen} onOpenChange={setUpdateOpen} title="How did it go?" description="Pick the closest answer. A note can come later." snap={0.58}><div className="update-options">{(["Made progress", "Held steady", "Paused for now"] as UpdateChoice[]).map((choice) => <button key={choice} className={updateChoice === choice ? "update-option selected" : "update-option"} type="button" onClick={() => setUpdateChoice(choice)}><span className="choice-ring" aria-hidden="true">{updateChoice === choice ? <CheckIcon /> : null}</span>{choice}</button>)}<button className="sheet-primary" type="button" onClick={() => updateGoal(selectedGoal.id, updateChoice)}>Save update</button></div></BottomSheet>
+    <BottomSheet open={checkpointOpen} onOpenChange={setCheckpointOpen} title="Name a checkpoint" description="A checkpoint is a memorable marker—not a demand." snap={0.48}><div className="create-goal-form"><div className={newCheckpointName ? "floating-field has-value" : "floating-field"}><KeyboardInput id="checkpoint-name" value={newCheckpointName} onChange={(event) => setNewCheckpointName(event.target.value)} placeholder=" " /><label htmlFor="checkpoint-name">Checkpoint name</label></div><p className="field-hint">What would you like to remember next?</p><button className="sheet-primary" type="button" onClick={addCheckpoint} disabled={!newCheckpointName.trim()}>Add checkpoint</button></div></BottomSheet>
+    <BottomSheet open={createOpen} onOpenChange={setCreateOpen} title="A new goal" description="A name is plenty for now." snap={0.48}><div className="create-goal-form"><label htmlFor="goal-name">What would you like to make room for?</label><KeyboardInput id="goal-name" value={newGoalName} onChange={(event) => setNewGoalName(event.target.value)} placeholder="e.g. Learn to draw" /><button className="sheet-primary" type="button" onClick={createGoal} disabled={!newGoalName.trim()}>Add this goal</button></div></BottomSheet>
+    {toast ? <div className="journal-toast" role="status" aria-live="polite"><span>{toast.message}</span>{toast.undoGoal ? <button type="button" onClick={undoProgress}>Undo</button> : null}</div> : null}
+  </div>;
+}
+
+function HomeScreen({ activeGoals, openGoal, updateGoal, justSavedGoalId, goToPast }: { activeGoals: Goal[]; openGoal: (id: string) => void; updateGoal: (id: string) => void; justSavedGoalId: string | null; goToPast: () => void }) {
+  return <><section className="goal-list" aria-label="Active goals">{activeGoals.map((goal) => <GoalCard key={goal.id} goal={goal} justSaved={goal.id === justSavedGoalId} openGoal={() => openGoal(goal.id)} updateGoal={() => updateGoal(goal.id)} />)}</section><button className="past-link" type="button" onClick={goToPast}>View paused goals<ChevronRightIcon /></button></>;
+}
+
+function GoalCard({ goal, justSaved, openGoal, updateGoal }: { goal: Goal; justSaved: boolean; openGoal: () => void; updateGoal: () => void }) {
+  const nextCheckpoint = goal.checkpoints.find((checkpoint) => !checkpoint.complete);
+  return <article className="goal-card"><button className="goal-summary" type="button" onClick={openGoal}><span><strong>{goal.title}</strong><small>{goal.note}</small></span><b>{goal.progress}%</b></button><div className="progress-track" role="progressbar" aria-label={`${goal.title} progress`} aria-valuenow={goal.progress} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${goal.progress}%` }} /></div><div className="checkpoint-row"><button className="checkpoint-copy" type="button" onClick={openGoal}><span>Checkpoint</span><strong>{nextCheckpoint?.title ?? "Add a checkpoint"}</strong></button><button className={justSaved ? "quick-progress is-saved" : "quick-progress"} type="button" onClick={updateGoal} aria-label={`Log progress for ${goal.title}`}>{justSaved ? <CheckIcon /> : <PlusIcon />}</button></div></article>;
+}
+
+function DetailScreen({ goal, justSaved, makeProgress, openDetailedUpdate, openCheckpoint, toggleCheckpoint, pauseGoal }: { goal: Goal; justSaved: boolean; makeProgress: () => void; openDetailedUpdate: () => void; openCheckpoint: () => void; toggleCheckpoint: (id: string) => void; pauseGoal: () => void }) {
+  return <><section className="detail-intro"><p className="journal-eyebrow">Progress story</p><div className="detail-title-row"><h2>{goal.title}</h2><button className={justSaved ? "quick-progress large is-saved" : "quick-progress large"} type="button" onClick={makeProgress} aria-label={`Log progress for ${goal.title}`}>{justSaved ? <CheckIcon /> : <PlusIcon />}</button></div><div className="progress-hero"><strong>{goal.progress}% complete</strong><p>{goal.note}. This can be uneven and still count.</p></div><button className="subtle-action" type="button" onClick={openDetailedUpdate}>Log a different update<ChevronRightIcon /></button></section><section className="checkpoint-section" aria-label="Checkpoints"><div className="section-heading"><h3>Checkpoints</h3><button type="button" onClick={openCheckpoint}><PlusIcon />Name one</button></div>{goal.checkpoints.length ? goal.checkpoints.map((checkpoint) => <button className={checkpoint.complete ? "checkpoint-item done" : "checkpoint-item"} type="button" key={checkpoint.id} onClick={() => toggleCheckpoint(checkpoint.id)}><span className="checkpoint-indicator">{checkpoint.complete ? <CheckIcon /> : null}</span><span className="checkpoint-title">{checkpoint.title}</span></button>) : <button className="empty-checkpoint" type="button" onClick={openCheckpoint}>Name your first checkpoint</button>}</section><section className="timeline" aria-label="Progress updates"><h3>Recent updates</h3>{goal.updates.slice(0, 4).map((update, index) => <div className="timeline-entry" key={`${update.label}-${index}`}><span aria-hidden="true" /><div>{update.label}<small>{update.date}</small></div></div>)}</section><button className="pause-action" type="button" onClick={pauseGoal}>Pause this goal</button></>;
+}
+
+function PastScreen({ goals, restoreGoal }: { goals: Goal[]; restoreGoal: (id: string) => void }) { return <section className="past-screen"><p className="journal-eyebrow">Past goals</p><h2>Nothing has disappeared.</h2>{goals.length ? goals.map((goal) => <article className="past-card" key={goal.id}><strong>{goal.title}</strong><p>{goal.note}</p><button type="button" onClick={() => restoreGoal(goal.id)}>Bring back</button></article>) : <p className="empty-state">There is nothing resting here right now.</p>}</section>; }
+
+function SettingsScreen({ exportJournal, importJournal }: { exportJournal: () => void; importJournal: (file: File | null) => void }) {
+  return <section className="settings-screen"><p className="journal-eyebrow">Settings</p><h2>Your journal stays here.</h2><p className="settings-intro">It lives only in this browser on this device. Nothing is sent anywhere.</p><div className="settings-card"><div><strong>Backup your journal</strong><p>Keep a private copy whenever you like.</p></div><button className="settings-action" type="button" onClick={exportJournal}>Export backup</button></div><div className="settings-card"><div><strong>Restore a backup</strong><p>Bring back a journal you exported earlier.</p></div><label className="settings-action" htmlFor="journal-import">Import backup<input id="journal-import" type="file" accept="application/json,.json" onChange={(event) => { importJournal(event.target.files?.[0] ?? null); event.currentTarget.value = ""; }} /></label></div><p className="settings-footnote">If you clear this site’s browser data, use a backup to bring your journal back.</p></section>;
+}
+
+function JournalDock({ screen, goHome, goPast, openSettings }: { screen: "home" | "detail" | "past" | "settings"; goHome: () => void; goPast: () => void; openSettings: () => void }) {
+  const [magnification, setMagnification] = useState([0, 0, 0]);
+  const items = [
+    { label: "Goals", Icon: HomeIcon, active: screen === "home" || screen === "detail", onClick: goHome },
+    { label: "Past", Icon: ArchiveIcon, active: screen === "past", onClick: goPast },
+    { label: "Settings", Icon: GearIcon, active: screen === "settings", onClick: openSettings },
+  ];
+  const resetMagnification = () => setMagnification([0, 0, 0]);
+  const updateMagnification = (event: ReactPointerEvent<HTMLElement>) => {
+    if (event.pointerType !== "mouse") return;
+    const buttons = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>("button"));
+    const next = buttons.map((button) => {
+      const bounds = button.getBoundingClientRect();
+      const distance = Math.abs(event.clientX - (bounds.left + bounds.width / 2));
+      return Math.max(0, 1 - distance / 92);
+    });
+    setMagnification(next);
+  };
+
+  return <nav className="journal-nav" aria-label="Primary navigation" onPointerMove={updateMagnification} onPointerLeave={resetMagnification}>
+    {items.map(({ label, Icon, active, onClick }, index) => {
+      const intensity = magnification[index] ?? 0;
+      const style = { "--dock-scale": 1 + intensity * .24, "--dock-lift": `${intensity * 8}px` } as CSSProperties;
+      return <button className={active ? "dock-item active" : "dock-item"} type="button" key={label} onClick={() => { resetMagnification(); onClick(); }} aria-label={label} style={style}><Icon />{active ? <DotFilledIcon className="dock-active-dot" aria-hidden="true" /> : null}</button>;
+    })}
+  </nav>;
+}
