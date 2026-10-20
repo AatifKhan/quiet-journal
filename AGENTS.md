@@ -12,6 +12,8 @@
 - Checkpoints are added inline on the goal detail screen. The entry point is a full-width dashed row; expanding it reveals a labelled field, a calm Cancel control, and one clear full-width primary action. Do not reintroduce a checkpoint bottom sheet or an ambiguous “Name one” affordance.
 - Goals are created inline on Home. Both the header plus and a full-width dashed add row reveal a labelled composer above the goal list, with Cancel and one clear full-width primary action. Do not reintroduce a goal-creation bottom sheet.
 - After a goal is named, goal creation moves to a dedicated checkpoint-setup screen. It uses a compact count picker: “None for now”, `1`, `2`, `3`, and `4+`; the selected number immediately reveals matching named fields. Do not force checkpoint creation or reintroduce the persistent footer navigation on this focused setup screen.
+- For goals with checkpoints, progress is checkpoint-led: completed checkpoints divide the full 100% equally. Toggling a checkpoint immediately recalculates the goal’s progress; goals without checkpoints retain their gentle manual progress updates.
+- Goal detail keeps progress logging intentionally simple; there is no alternate-update chooser. Deleting a goal happens from its detail screen and immediately returns Home with a temporary Undo affordance.
 
 ## Prototype Instructions
 

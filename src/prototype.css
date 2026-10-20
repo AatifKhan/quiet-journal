@@ -56,17 +56,24 @@
 .goal-list { display: grid; gap: 12px; }
 .goal-card { padding: 17px; border: 1px solid var(--line); border-radius: 22px; background: var(--card); box-shadow: 0 12px 32px rgba(0, 0, 0, .18); transition: transform 180ms ease, border-color 180ms ease; }
 .goal-card:has(.goal-summary:active) { transform: scale(.988); border-color: #44443f; }
-.goal-summary { display: flex; width: 100%; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; }
-.goal-summary strong { display: block; font-size: 17px; font-weight: 500; line-height: 1.2; letter-spacing: -.025em; }
-.goal-summary small { display: block; margin-top: 5px; color: var(--muted); font: 400 12px/1.35 Inter, ui-sans-serif, sans-serif; }
-.goal-summary b { color: var(--accent); font: 600 13px/1.25 Inter, ui-sans-serif, sans-serif; white-space: nowrap; }
-.progress-track { height: 5px; margin: 18px 0 15px; overflow: hidden; border-radius: 99px; background: #343432; }
-.progress-track span { display: block; height: 100%; border-radius: inherit; background: var(--accent); transition: width 340ms cubic-bezier(.2, .9, .25, 1); }
-.checkpoint-row { display: flex; align-items: center; gap: 12px; padding: 11px 0 0; border-top: 1px solid var(--line); }
-.checkpoint-copy { min-width: 0; flex: 1; padding: 0; border: 0; background: transparent; color: var(--ink); text-align: left; }
-.checkpoint-copy span { display: block; margin-bottom: 3px; color: var(--muted); font: 600 9px/1 Inter, ui-sans-serif, sans-serif; letter-spacing: .1em; text-transform: uppercase; }
-.checkpoint-copy strong { display: block; overflow: hidden; font-size: 13px; font-weight: 500; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
-.quick-progress { width: 37px; height: 37px; flex: 0 0 37px; }
+.goal-summary { display: flex; width: 100%; align-items: center; gap: 12px; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; }
+.goal-icon { flex: 0 0 auto; font-size: 28px; line-height: 1; }
+.goal-info { min-width: 0; flex: 1; }
+.goal-info strong { display: block; font-size: 17px; font-weight: 500; line-height: 1.2; letter-spacing: -.025em; }
+.goal-info small { display: block; margin-top: 4px; color: var(--muted); font: 400 12px/1.35 Inter, ui-sans-serif, sans-serif; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Circular progress ring */
+.circular-progress { flex: 0 0 44px; }
+.circular-track { fill: none; stroke: #343432; }
+.circular-fill { fill: none; stroke: var(--accent); transition: stroke-dashoffset 400ms cubic-bezier(.2, .9, .25, 1); }
+.circular-label { fill: var(--accent); font: 600 11px/1 Inter, ui-sans-serif, sans-serif; }
+
+/* Milestone row beneath the card summary */
+.milestone-row { display: flex; align-items: center; gap: 10px; padding: 12px 0 0; margin-top: 14px; border-top: 1px solid var(--line); }
+.milestone-count { flex: 0 0 auto; color: var(--accent); font: 600 13px/1 Inter, ui-sans-serif, sans-serif; }
+.milestone-name { min-width: 0; flex: 1; overflow: hidden; color: #d4d4d0; font: 500 13px/1.2 Inter, ui-sans-serif, sans-serif; text-overflow: ellipsis; white-space: nowrap; }
+.milestone-complete { display: grid; width: 37px; height: 37px; flex: 0 0 37px; place-items: center; border: 1px solid #31312f; border-radius: 50%; background: #1b1b1a; color: var(--ink); font-size: 18px; line-height: 1; transition: transform 150ms ease, background 150ms ease, border-color 150ms ease; }
+.milestone-complete:active { transform: scale(.91); background: #2b2b29; }
 .past-link { display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; margin: 22px auto 0; padding: 0; border: 0; background: transparent; color: var(--muted); font: 500 12px/1.35 Inter, ui-sans-serif, sans-serif; }
 .past-link svg { width: 15px; height: 15px; }
 
@@ -77,8 +84,6 @@
 .progress-hero { padding: 19px; margin-bottom: 15px; border: 1px solid #33332d; border-radius: 20px; background: #171716; }
 .progress-hero strong { display: block; margin-bottom: 7px; color: var(--accent); font-size: 26px; font-weight: 500; letter-spacing: -.045em; }
 .progress-hero p { margin: 0; color: #bbbcb7; font: 400 13px/1.42 Inter, ui-sans-serif, sans-serif; }
-.subtle-action { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 13px 0; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: #dadad7; text-align: left; font: 500 13px/1.2 Inter, ui-sans-serif, sans-serif; }
-.subtle-action svg { width: 16px; height: 16px; color: var(--muted); }
 
 .checkpoint-section, .timeline { margin-top: 27px; }
 .section-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 11px; }
@@ -113,6 +118,8 @@
 .timeline-entry > span { width: 8px; height: 8px; margin-top: 4px; border-radius: 50%; background: var(--accent); }
 .timeline-entry small { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
 .pause-action { width: 100%; min-height: 45px; margin-top: 25px; border: 1px solid #383835; border-radius: 14px; background: transparent; color: var(--muted); font: 500 12px/1.2 Inter, ui-sans-serif, sans-serif; }
+.delete-goal-action { width: 100%; min-height: 45px; margin-top: 10px; border: 0; background: transparent; color: #b88a87; font: 500 12px/1.2 Inter, ui-sans-serif, sans-serif; }
+.delete-goal-action:active { color: #efaaa4; transform: scale(.98); }
 
 .past-screen h2 { margin-bottom: 23px; }
 .past-card { margin-bottom: 12px; padding: 17px; border: 1px solid var(--line); border-radius: 18px; background: var(--card); }
